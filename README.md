@@ -1,4 +1,4 @@
-I k![DINOv2 SALAD](assets/dino_salad_title.png)
+![DINOv2 SALAD](assets/dino_salad_title.png)
 # Optimal Transport Aggregation for Visual Place Recognition
 Sergio Izquierdo, Javier Civera
 
