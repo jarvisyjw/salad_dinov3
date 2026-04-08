@@ -9,7 +9,8 @@ import torch.utils.data as data
 from PIL import Image, UnidentifiedImageError
 from sklearn.neighbors import NearestNeighbors
 
-root_dir = '../data/Pittsburgh/'
+root_dir = './data/Pittsburgh/'
+database_dir = join(root_dir, 'database')
 
 if not exists(root_dir):
     raise FileNotFoundError(
@@ -94,7 +95,7 @@ class WholeDatasetFromStruct(data.Dataset):
         self.input_transform = input_transform
 
         self.dbStruct = parse_dbStruct(structFile)
-        self.images = [join(root_dir, dbIm) for dbIm in self.dbStruct.dbImage]
+        self.images = [join(database_dir, dbIm) for dbIm in self.dbStruct.dbImage]
         if not onlyDB:
             self.images += [join(queries_dir, qIm)
                             for qIm in self.dbStruct.qImage]

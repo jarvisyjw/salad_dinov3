@@ -182,6 +182,8 @@ class VPRModel(pl.LightningModule):
 
         loss = self.loss_function(descriptors, labels) # Call the loss_function we defined above
         
+        current_lr = self.trainer.optimizers[0].param_groups[0]['lr']
+        self.log('lr', current_lr, logger=True, prog_bar=True, on_step=True, on_epoch=False)
         self.log('loss', loss.item(), logger=True, prog_bar=True)
         return {'loss': loss}
     
@@ -194,6 +196,8 @@ class VPRModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx, dataloader_idx=None):
         places, _ = batch
         descriptors = self(places)
+        if dataloader_idx is None:
+            dataloader_idx = 0
         self.val_outputs[dataloader_idx].append(descriptors.detach().cpu())
         return descriptors.detach().cpu()
     
@@ -210,10 +214,6 @@ class VPRModel(pl.LightningModule):
         val_step_outputs = self.val_outputs
 
         dm = self.trainer.datamodule
-        # The following line is a hack: if we have only one validation set, then
-        # we need to put the outputs in a list (Pytorch Lightning does not do it presently)
-        if len(dm.val_datasets)==1: # we need to put the outputs in a list
-            val_step_outputs = [val_step_outputs]
         
         for i, (val_set_name, val_dataset) in enumerate(zip(dm.val_set_names, dm.val_datasets)):
             feats = torch.concat(val_step_outputs[i], dim=0)

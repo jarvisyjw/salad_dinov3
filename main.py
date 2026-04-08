@@ -4,29 +4,38 @@ from vpr_model import VPRModel
 from dataloaders.GSVCitiesDataloader import GSVCitiesDataModule
 
 if __name__ == '__main__':        
+    RUN_SANITY_CHECK = False # set this to True to run a quick sanity check (runs 5 batches and 2 val steps)
+
     datamodule = GSVCitiesDataModule(
         batch_size=60,
         img_per_place=4,
         min_img_per_place=4,
         shuffle_all=False, # shuffle all images or keep shuffling in-city only
         random_sample_from_each_place=True,
-        image_size=(224, 224),
+        # image_size=(224, 224),
+        image_size=(256, 256),
         num_workers=10,
         show_data_stats=True,
-        val_set_names=['pitts30k_val', 'pitts30k_test', 'msls_val'], # pitts30k_val, pitts30k_test, msls_val
+        val_set_names=['msls_val', 'pitts30k_val'], # pitts30k_val, pitts30k_test, msls_val
+        # val_set_names=['pitts30k_val', 'pitts30k_test', 'msls_val'], # pitts30k_val, pitts30k_test, msls_val
     )
     
     model = VPRModel(
         #---- Encoder
-        backbone_arch='dinov2_vitb14',
+        # backbone_arch='dinov2_vitb14',
+        backbone_arch='dinov3_vitl16',
         backbone_config={
             'num_trainable_blocks': 4,
             'return_token': True,
             'norm_layer': True,
+            # Optional DINOv3-only args:
+            'weights': 'weights/dinov3_vitl16_pretrain_lvd1689m-8aa4cbdd.pth',
+            'pretrained': True,
         },
         agg_arch='SALAD',
         agg_config={
-            'num_channels': 768,
+            # 'num_channels': 768,
+            'num_channels': 1024,
             'num_clusters': 64,
             'cluster_dim': 128,
             'token_dim': 256,
@@ -65,18 +74,29 @@ if __name__ == '__main__':
 
     #------------------
     # we instanciate a trainer
+    tb_logger = pl.loggers.TensorBoardLogger(
+        save_dir='./logs',
+        name='tensorboard'
+    )
+    lr_monitor_cb = pl.callbacks.LearningRateMonitor(logging_interval='step')
+
+    trainer_callbacks = [lr_monitor_cb] if RUN_SANITY_CHECK else [checkpoint_cb, lr_monitor_cb]
+
     trainer = pl.Trainer(
         accelerator='gpu',
         devices=1,
         default_root_dir=f'./logs/', # Tensorflow can be used to viz 
+        logger=tb_logger,
         num_nodes=1,
-        num_sanity_val_steps=0, # runs a validation step before stating training
+        num_sanity_val_steps=2 if RUN_SANITY_CHECK else 0, # runs a validation step before stating training
         precision='16-mixed', # we use half precision to reduce  memory usage
-        max_epochs=4,
+        max_epochs=1 if RUN_SANITY_CHECK else 4,
+        limit_train_batches=5 if RUN_SANITY_CHECK else 1.0,
+        limit_val_batches=5 if RUN_SANITY_CHECK else 1.0,
         check_val_every_n_epoch=1, # run validation every epoch
-        callbacks=[checkpoint_cb],# we only run the checkpointing callback (you can add more)
+        callbacks=trainer_callbacks,# we only run the checkpointing callback (you can add more)
         reload_dataloaders_every_n_epochs=1, # we reload the dataset to shuffle the order
-        log_every_n_steps=20,
+        log_every_n_steps=1 if RUN_SANITY_CHECK else 20,
     )
 
     # we call the trainer, we give it the model and the datamodule

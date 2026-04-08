@@ -33,6 +33,25 @@ model.cuda()
 
 For training, download [GSV-Cities](https://github.com/amaralibey/gsv-cities) dataset. For evaluation download the desired datasets ([MSLS](https://github.com/FrederikWarburg/mapillary_sls), [NordLand](https://surfdrive.surf.nl/files/index.php/s/sbZRXzYe3l0v67W), [SPED](https://surfdrive.surf.nl/files/index.php/s/sbZRXzYe3l0v67W), or [Pittsburgh](https://data.ciirc.cvut.cz/public/projects/2015netVLAD/Pittsburgh250k/))
 
+## DINOv3 backbone support
+
+You can now use DINOv3 as the pretrained encoder backbone by setting `backbone_arch` to a DINOv3 variant in `main.py`:
+
+```python
+backbone_arch='dinov3_vitb16'
+backbone_config={
+  'num_trainable_blocks': 4,
+  'return_token': True,
+  'norm_layer': True,
+  'weights': 'LVD1689M',
+  'pretrained': True,
+}
+```
+
+Supported DINOv3 backbones: `dinov3_vits16`, `dinov3_vits16plus`, `dinov3_vitb16`, `dinov3_vitl16`, `dinov3_vitl16plus`, `dinov3_vith16plus`, `dinov3_vit7b16`.
+
+Note: Loading pretrained DINOv3 weights depends on Torch Hub access to `facebookresearch/dinov3` weights.
+
 ## Train
 
 Training is done on GSV-Cities for 4 complete epochs. It requires around 30 minutes on an NVIDIA RTX 3090. For training DINOv2 SALAD run:

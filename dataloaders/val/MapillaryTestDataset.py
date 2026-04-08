@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 from pathlib import Path
 
-DATASET_ROOT = '../data/mapillary/'
+DATASET_ROOT = './data/mapillary_sls/'
 GT_ROOT = './datasets/' # BECAREFUL, this is the ground truth that comes with GSV-Cities
 
 class MSLSTest(Dataset):
